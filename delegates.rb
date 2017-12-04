@@ -48,8 +48,7 @@ module Cantaloupe
   ##
   # Used to add additional keys to an information JSON response, including
   # `attribution`, `license`, `logo`, `service`, and other custom keys. See
-  # the [Image API specification]
-  # (http://iiif.io/api/image/2.1/#image-information).
+  # the [Image API specification](http://iiif.io/api/image/2.1/#image-information).
   #
   # @param identifier [String] Image identifier
   # @return [Hash] Hash that will be merged into IIIF Image API 2.x
@@ -127,11 +126,12 @@ module Cantaloupe
 
     ##
     # @param identifier [String] Image identifier
+    # @param context [Hash] Context for this request
     # @return [String,Hash<String,String>,nil] String URL of the image
     #         corresponding to the given identifier; or a hash with `uri`,
     #         `username`, and `secret` keys; or nil if not found.
     #
-    def self.get_url(identifier)
+    def self.get_url(identifier, context)
       require 'cgi'
       values = CGI::unescape(identifier).split('~')
       if values.length != 3
