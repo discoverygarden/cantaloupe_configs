@@ -134,13 +134,20 @@ module Cantaloupe
     def self.get_url(identifier, context)
       require 'cgi'
       values = CGI::unescape(identifier).split('~')
-      if values.length != 3
+      if values.length >= 3 && values.length <= 4
         return nil
       end
-      pid = values[0]
-      dsid = values[1]
-      token = values[2]
-      return "http://localhost/islandora/object/#{pid}/datastream/#{dsid}/view?token=#{token}"
+
+      # If "values" has only three elements, "site_id" should be "nil",
+      # resulting in the default site being used (the second parameter to the
+      # ".fetch()" call below.
+      pid, dsid, token, site_id = values
+
+      return {
+        # Can uncomment/add additional entries as necessary.
+        #"first_site" => "http://first_site.domain.whatever/islandora/object/#{pid}/datastream/#{dsid}/view?token=#{token}",
+        #"second_site" => "http://second_site.domain.whatever/islandora/object/#{pid}/datastream/#{dsid}/view?token=#{token}",
+      }.fetch(site_id, "http://localhost/islandora/object/#{pid}/datastream/#{dsid}/view?token=#{token}")
     end
 
   end
