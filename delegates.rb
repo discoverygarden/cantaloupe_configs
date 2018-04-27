@@ -134,7 +134,7 @@ module Cantaloupe
     def self.get_url(identifier, context)
       require 'cgi'
       values = CGI::unescape(identifier).split('~')
-      if values.length >= 3 && values.length <= 4
+      if values.length < 3 || values.length > 4
         return nil
       end
 
