@@ -140,7 +140,7 @@ module Cantaloupe
       @@info.merge!(YAML.load_file(yaml_path))
       @@logger.info('Loaded YAML.')
     rescue Errno::ENOENT
-      @@logger.info('Using default configuration..')
+      @@logger.info('Using default configuration.')
     end
 
     @@logger.debug(@@info.to_yaml())
