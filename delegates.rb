@@ -2,7 +2,11 @@
 # Sample Ruby delegate script containing stubs and documentation for all
 # available delegate methods. See the "Delegate Script" section of the user
 # manual for more information.
-#
+
+require 'yaml'
+require 'java'
+require 'cgi'
+
 # The application will create an instance of this class early in the request
 # cycle and dispose of it at the end of the request cycle. Instances don't need
 # to be thread-safe, but sharing information across instances (requests)
@@ -138,6 +142,23 @@ class CustomDelegate
   #         and optionally `username` and `secret` keys; or nil if not found.
   #
   def httpsource_resource_info(options = {})
+    values = CGI::unescape(identifier).split('~')
+    if values.length < 3 || values.length > 4
+      return nil
+    end
+
+    # If "values" has only three elements, "site_id" should be "nil",
+    # resulting in the default site being used (the second parameter to the
+    # ".fetch()" call below.
+    pid, dsid, token, site_id = values
+
+    url = @@info['sitemap'].fetch(site_id, @@info['fallback']) % {
+      pid: pid,
+      dsid: dsid,
+      token: token,
+    }
+    @@logger.debug("Site ID '#{site_id}' resolved to '#{url}'.")
+    return { uri: url }
   end
 
   ##
@@ -211,4 +232,23 @@ class CustomDelegate
     []
   end
 
+
+  @@logger = Java::edu.illinois.library.cantaloupe.script.Logger
+
+  @@info = {
+    'fallback' => 'http://localhost/islandora/object/%{pid}/datastream/%{dsid}/view?token=%{token}',
+    'sitemap' => Hash.new,
+  }
+
+  begin
+    properties_file = Java::java.lang.System.getProperty('cantaloupe.config')
+    yaml_path = File.join(File.dirname(properties_file), 'info.yaml')
+    @@logger.debug("YAML Path: '#{yaml_path}'")
+    @@info.merge!(YAML.load_file(yaml_path))
+    @@logger.info('Loaded YAML.')
+  rescue Errno::ENOENT
+    @@logger.info('Using default configuration.')
+  end
+
+  @@logger.debug(@@info.to_yaml())
 end
