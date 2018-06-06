@@ -123,6 +123,27 @@ module Cantaloupe
   end
 
   module HttpResolver
+    require 'yaml'
+    require 'java'
+
+    @@logger = Java::edu.illinois.library.cantaloupe.script.Logger
+
+    @@info = {
+      'fallback' => 'http://localhost/islandora/object/%{pid}/datastream/%{dsid}/view?token=%{token}',
+      'sitemap' => Hash.new,
+    }
+
+    begin
+      properties_file = Java::java.lang.System.getProperty('cantaloupe.config')
+      yaml_path = File.join(File.dirname(properties_file), 'info.yaml')
+      @@logger.debug("YAML Path: '#{yaml_path}'")
+      @@info.merge!(YAML.load_file(yaml_path))
+      @@logger.info('Loaded YAML.')
+    rescue Errno::ENOENT
+      @@logger.info('Using default configuration.')
+    end
+
+    @@logger.debug(@@info.to_yaml())
 
     ##
     # @param identifier [String] Image identifier
@@ -143,11 +164,13 @@ module Cantaloupe
       # ".fetch()" call below.
       pid, dsid, token, site_id = values
 
-      return {
-        # Can uncomment/add additional entries as necessary.
-        #"first_site" => "http://first_site.domain.whatever/islandora/object/#{pid}/datastream/#{dsid}/view?token=#{token}",
-        #"second_site" => "http://second_site.domain.whatever/islandora/object/#{pid}/datastream/#{dsid}/view?token=#{token}",
-      }.fetch(site_id, "http://localhost/islandora/object/#{pid}/datastream/#{dsid}/view?token=#{token}")
+      url = @@info['sitemap'].fetch(site_id, @@info['fallback']) % {
+        pid: pid,
+        dsid: dsid,
+        token: token,
+      }
+      @@logger.debug("Site ID '#{site_id}' resolved to '#{url}'.")
+      return url
     end
 
   end

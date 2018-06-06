@@ -1,0 +1,23 @@
+---
+# URL template info:
+#
+# Templates are provided with the three required components from our IIIF
+# identifiers:
+# - 'pid': The PID of the object.
+# - 'disd': The identifier of the datastream to access from the object.
+# - 'token': An access token providing datastream viewing access.
+#
+##
+#
+# 'fallback': The default URL template to use if nothing is matched in
+#   the 'sitemap' hash below. The (hard-coded) default is the same as below:
+fallback: 'http://localhost/islandora/object/%{pid}/datastream/%{dsid}/view?token=%{token}'
+# 'sitemap': Hash of opaque site identifiers to related URL templates. This site
+#   identifier should be provided as a fourth value the tilde-separated IIIF
+#   identifier; for example, "the:pid~JP2~access_token~opaque_identifier".
+#   Opaque identifiers should be unique between sites in order to route to the
+#   correct site and match the access token to the expected user. Defaults to
+#   an empty hash, resulting in the 'fallback' being used in all cases.
+sitemap:
+    alpha: 'http://localhost/alpha/islandora/object/%{pid}/datastream/%{dsid}/view?token=%{token}'
+    bravo: 'http://localhost/bravo/islandora/object/%{pid}/datastream/%{dsid}/view?token=%{token}'
