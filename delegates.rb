@@ -1,7 +1,6 @@
 ##
 # Sample Ruby delegate script containing stubs and documentation for all
-# available delegate methods. See the "Delegate Script" section of the user
-# manual for more information.
+# available delegate methods. See the user manual for more information.
 
 require 'yaml'
 require 'java'
@@ -209,6 +208,9 @@ class CustomDelegate
   end
 
   ##
+  # N.B.: this method should not try to perform authorization. `authorize()`
+  # should be used instead.
+  #
   # @param options [Hash] Empty hash.
   # @return [String] Identifier of the image corresponding to the given
   #                  identifier in the database.
@@ -230,9 +232,6 @@ class CustomDelegate
   end
 
   ##
-  # N.B.: this method should not try to perform authorization. `authorize()`
-  # should be used instead.
-  #
   # @param options [Hash] Empty hash.
   # @return [String] SQL statement that selects the BLOB corresponding to the
   #                  value returned by `jdbcsource_database_identifier()`.
