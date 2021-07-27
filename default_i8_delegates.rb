@@ -1,4 +1,4 @@
-require '/opt/cantaloupe_configs/default/delegates.rb'
+require '/opt/cantaloupe_configs/delegates.rb'
 require 'base64'
 require 'net/http'
 require 'cache_lib'
