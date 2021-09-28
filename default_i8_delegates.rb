@@ -12,7 +12,14 @@ require 'cache_lib'
 #            together.
 #     - resource: A bucket for each resource, checked with the given token on
 #                 the given site.
-$sites_cache = CacheLib.create :lru, $info['sitemap'].length
+unless $sites_cache.nil?
+  $semaphore.synchronize {
+    # Avoid repopulating if populated in another thread...
+    unless $sites_cache.nil?
+      $sites_cache = CacheLib.safe_create :lru, $info['sitemap'].length
+    end
+  }
+end
 
 class CustomDelegate
   old_function = instance_method(:httpsource_resource_info)
@@ -125,7 +132,7 @@ class CustomDelegate
       site_cache = $sites_cache.get(_site_id) {
         $logger.debug("Creating token bucket for #{_site_id}")
         # XXX: Implicit return to populate cache value.
-        CacheLib.create :ttl, 1024, 600
+        CacheLib.safe_create :ttl, 1024, 600
       }
       site_token_cache = site_cache.get(_header_value) {
         # XXX: Want to check the token before the resource, because we could
@@ -133,7 +140,7 @@ class CustomDelegate
         # empty string as the token).
         $logger.debug("Creating resource bucket a token in #{_site_id}.")
         # XXX: Implicit return to populate cache value.
-        CacheLib.create :ttl, 100, 60
+        CacheLib.safe_create :ttl, 100, 60
       }
       begin
         return site_token_cache.get(_resource) {
@@ -141,7 +148,7 @@ class CustomDelegate
           _fetch(URI(_resource)).is_a?(Net::HTTPSuccess)
         }
       rescue => e
-        $logger.error("Exception: #{e}")
+        $logger.error("Exception: #{e}, Backtrace: #{e.backtrace}")
         return false
       end
     else
