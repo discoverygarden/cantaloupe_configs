@@ -8,10 +8,10 @@ require 'cgi'
 
 $semaphore = Mutex.new
 
-unless $logger
+if $logger.nil?
   $semaphore.synchronize {
     # Might have been done in another thread.
-    unless $logger
+    if $logger.nil?
       $logger = Java::edu.illinois.library.cantaloupe.script.Logger
 
       $info = {
@@ -28,11 +28,11 @@ unless $logger
       rescue Errno::ENOENT
         $logger.info('Using default configuration.')
       end
+
+      $logger.debug($info.to_yaml())
     end
   }
 end
-
-$logger.debug($info.to_yaml())
 
 # The application will create an instance of this class early in the request
 # cycle and dispose of it at the end of the request cycle. Instances don't need

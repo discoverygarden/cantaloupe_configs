@@ -12,11 +12,11 @@ require 'cache_lib'
 #            together.
 #     - resource: A bucket for each resource, checked with the given token on
 #                 the given site.
-unless $sites_cache.nil?
+if $sites_cache.nil?
   # XXX: "$semaphore" should be defined in the _other_ "delegates.rb" file.
   $semaphore.synchronize {
     # Avoid repopulating if populated in another thread...
-    unless $sites_cache.nil?
+    if $sites_cache.nil?
       $sites_cache = CacheLib.safe_create :lru, $info['sitemap'].length
     end
   }
