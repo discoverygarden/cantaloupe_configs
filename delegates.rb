@@ -6,24 +6,33 @@ require 'yaml'
 require 'java'
 require 'cgi'
 
-$logger = Java::edu.illinois.library.cantaloupe.script.Logger
+$semaphore = Mutex.new
 
-$info = {
-  'fallback' => 'http://localhost/islandora/object/%{pid}/datastream/%{dsid}/view?token=%{token}',
-  'sitemap' => Hash.new,
-}
+if $logger.nil?
+  $semaphore.synchronize {
+    # Might have been done in another thread.
+    if $logger.nil?
+      $logger = Java::edu.illinois.library.cantaloupe.script.Logger
 
-begin
-  properties_file = Java::java.lang.System.getProperty('cantaloupe.config')
-  yaml_path = File.join(File.dirname(properties_file), 'info.yaml')
-  $logger.debug("YAML Path: '#{yaml_path}'")
-  $info.merge!(YAML.load_file(yaml_path))
-  $logger.info('Loaded YAML.')
-rescue Errno::ENOENT
-  $logger.info('Using default configuration.')
+      $info = {
+        'fallback' => 'http://localhost/islandora/object/%{pid}/datastream/%{dsid}/view?token=%{token}',
+        'sitemap' => Hash.new,
+      }
+
+      begin
+        properties_file = Java::java.lang.System.getProperty('cantaloupe.config')
+        yaml_path = File.join(File.dirname(properties_file), 'info.yaml')
+        $logger.debug("YAML Path: '#{yaml_path}'")
+        $info.merge!(YAML.load_file(yaml_path))
+        $logger.info('Loaded YAML.')
+      rescue Errno::ENOENT
+        $logger.info('Using default configuration.')
+      end
+
+      $logger.debug($info.to_yaml())
+    end
+  }
 end
-
-$logger.debug($info.to_yaml())
 
 # The application will create an instance of this class early in the request
 # cycle and dispose of it at the end of the request cycle. Instances don't need
