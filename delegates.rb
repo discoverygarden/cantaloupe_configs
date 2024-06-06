@@ -12,13 +12,7 @@ if $logger.nil?
   $semaphore.synchronize {
     # Might have been done in another thread.
     if $logger.nil?
-      # XXX: Cantaloupe 5 renamespace'd the logger, so try to load it from
-      # the new namespace, first.
-      begin
-        $logger = Java::edu.illinois.library.cantaloupe.delegate.Logger
-      rescue
-        $logger = Java::edu.illinois.library.cantaloupe.script.Logger
-      end
+      $logger = Java::edu.illinois.library.cantaloupe.delegate.Logger
 
       $info = {
         'fallback' => 'http://localhost/islandora/object/%{pid}/datastream/%{dsid}/view?token=%{token}',
