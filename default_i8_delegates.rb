@@ -23,7 +23,10 @@ if $sites_cache.nil?
 end
 
 class CustomDelegate
-  old_function = instance_method(:httpsource_resource_info)
+  old_functions = {
+    :httpsource_resource_info => instance_method(:httpsource_resource_info),
+    :pre_authorize => instance_method(:pre_authorize)
+  }
 
   # Get the resource suffix for the given ID.
   def _suffix
@@ -65,7 +68,7 @@ class CustomDelegate
 
       return to_return
     else
-      return old_function.bind(self).call
+      return old_functions[:httpsource_resource_info].bind(self).call
     end
   end
 
@@ -125,7 +128,7 @@ class CustomDelegate
   end
 
   # Override; handle I8 resource auth.
-  def authorize(options = {})
+  def pre_authorize(options = {})
     # If...
     if _resource
       # ... we have something that appears to be an I8 resource, enforce auth...
@@ -155,7 +158,7 @@ class CustomDelegate
     else
       # ... otherwise, pass it, assuming it should contain an auth token in the
       # URL.
-      return true
+      return old_functions[:pre_authorize].bind(self).call
     end
   end
 
