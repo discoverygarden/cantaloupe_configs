@@ -77,7 +77,7 @@ class CustomDelegate
     {
       'X-DGI-I8-Helper-Authorization-Token': "Bearer %{value}",
       'Authorization': "%{value}",
-    }.map { |k, v| [k.downcase, v] }.to_hash
+    }.map { |k, v| [k.downcase, v] }.to_h
   end
 
   # Get the auth headers present in the request headers.
@@ -89,7 +89,7 @@ class CustomDelegate
 
   # Retrieve a hash of headers to pass, mapped.
   def _headers
-    _context_auth_headers.map { |k, v| ['Authorization', _auth_headers[k] % {value: v}]}.to_hash
+    _context_auth_headers.map { |k, v| ['Authorization', _auth_headers[k] % {value: v}]}.to_h
   end
 
   # Acquire cache ID value.
