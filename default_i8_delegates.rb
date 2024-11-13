@@ -89,7 +89,7 @@ class CustomDelegate
 
   # Retrieve a hash of headers to pass, mapped.
   def _headers
-    _context_auth_headers.to_a.map { |k, v| ['Authorization', _auth_headers[k] % {value: v}]}.to_h
+    _context_auth_headers.to_a.map { |k, v| ['Authorization', _auth_headers[k.downcase] % {value: v}]}.to_h
   end
 
   # Acquire cache ID value.
