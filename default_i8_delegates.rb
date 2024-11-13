@@ -82,7 +82,7 @@ class CustomDelegate
 
   # Get the auth headers present in the request headers.
   def _context_auth_headers
-    request_headers = context['request_headers'].transform_keys { |k| k.downcase }
+    request_headers = context['request_headers'].to_h.transform_keys { |k| k.downcase }
     headers = request_headers.select { |k, v| _auth_headers.include?(k) }
     raise "Too many auth headers. Only one of #{_auth_headers.keys} expected." if headers.size > 1
     return headers
