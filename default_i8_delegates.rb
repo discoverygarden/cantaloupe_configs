@@ -82,19 +82,25 @@ class CustomDelegate
 
   # Get the auth headers present in the request headers.
   def _context_auth_headers
-    headers = context['request_headers'].select { |k, v| _auth_headers.include?(k.downcase) }
+    request_headers = context['request_headers'].transform_keys { |k| k.downcase }
+    headers = request_headers.select { |k, v| _auth_headers.include?(k) }
     raise "Too many auth headers. Only one of #{_auth_headers.keys} expected." if headers.size > 1
     return headers
   end
 
   # Retrieve a hash of headers to pass, mapped.
   def _headers
-    _context_auth_headers.to_a.map { |k, v| ['Authorization', _auth_headers[k.downcase] % {value: v}]}.to_h
+    _context_auth_headers.to_a.map do |item|
+      k, v = item
+      ['Authorization', _auth_headers[k] % {value: v}]}.to_h
   end
 
   # Acquire cache ID value.
   def _header_value
-    _context_auth_headers.to_a.map { |k, v| "#{k}::#{v}"}.first
+    _context_auth_headers.to_a.map do |item|
+      k, v = item
+      "#{k}::#{v}"
+    end.first
   end
 
   # Fetch the URL using the HEAD method.
