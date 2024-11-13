@@ -75,16 +75,28 @@ class CustomDelegate
   # Get hash of down-case'd headers to templates for an Authorization header.
   def _auth_headers
     {
-      'X-DGI-I8-Helper-Authorization-Token': "Bearer %{value}",
-      'Authorization': "%{value}",
-    }.transform_keys { |k| k.downcase }
+      # Bare token, needs to be formatted.
+      "X-DGI-I8-Helper-Authorization-Token" => "Bearer %{value}",
+      # Formatted token, just need to pass it along.
+      "Authorization" => "%{value}"
+    }.transform_keys! { |k| k.downcase }
   end
 
   # Get the auth headers present in the request headers.
   def _context_auth_headers
-    request_headers = context['request_headers'].to_h.transform_keys { |k| k.downcase }
-    headers = request_headers.select { |k, v| _auth_headers.include?(k) }
-    raise "Too many auth headers. Only one of #{_auth_headers.keys} expected." if headers.size > 1
+    request_headers = context['request_headers'].to_h.transform_keys! { |k| k.downcase }
+    headers = _auth_headers.to_a.map do |item|
+      k, v = item
+      if request_headers.include?(k)
+        [k, request_headers[k]]
+      else
+        [k, nil]
+      end
+    end.to_h.compact
+
+    if headers.size > 1
+      raise "Too many auth headers. Only one of #{_auth_headers.keys} expected."
+    end
     return headers
   end
 
@@ -115,8 +127,6 @@ class CustomDelegate
     _headers.each do |header, value|
       head[header] = value
     end
-
-    $logger.debug("Fetching from #{uri}, headers assembled: #{head.to_hash}")
 
     # XXX: Ideally, we could use some form of connection pooling or
     # something here.
