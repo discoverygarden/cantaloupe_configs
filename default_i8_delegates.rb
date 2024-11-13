@@ -92,7 +92,8 @@ class CustomDelegate
   def _headers
     _context_auth_headers.to_a.map do |item|
       k, v = item
-      ['Authorization', _auth_headers[k] % {value: v}]}.to_h
+      ['Authorization', _auth_headers[k] % {value: v}]
+    end.to_h
   end
 
   # Acquire cache ID value.
