@@ -72,32 +72,24 @@ class CustomDelegate
     end
   end
 
-  # The name of our header.
-  def _header
-    # XXX: Downcase'd as, Cantaloupe normalizes them to be such.
-    'X-DGI-I8-Helper-Authorization-Token'.downcase
+  # Get hash of down-case'd headers to templates for an Authorization header.
+  def _auth_headers
+    {
+      'X-DGI-I8-Helper-Authorization-Token': "Bearer %{value}",
+      'Authorization': "%{value}",
+    }.map { |k, v| [k.downcase, v] }.to_hash
   end
 
-  # Fetch the value of our passed header.
-  #
-  # Returns the empty string if the header was _not_ passed.
-  def _header_value
-    if context['request_headers'].has_key?(_header)
-      context['request_headers'][_header]
-    else
-      ''
-    end
+  # Get the auth headers present in the request headers.
+  def _context_auth_headers
+    headers = context['request_headers'].select { |k, v| _auth_headers.include?(k.downcase) }.to_hash
+    raise "Too many auth headers. Only one of #{_auth_headers.keys} expected." if headers.size > 1
+    return headers
   end
 
-  # Retrieve a hash of headers to pass.
+  # Retrieve a hash of headers to pass, mapped.
   def _headers
-    to_return = Hash.new
-
-    if context['request_headers'].has_key?(_header)
-      to_return['Authorization'] = "Bearer #{_header_value}"
-    end
-
-    return to_return
+    _context_auth_headers.map { |k, v| ['Authorization', _auth_headers[k] % {value: v}]}.to_hash
   end
 
   # Fetch the URL using the HEAD method.
@@ -111,6 +103,8 @@ class CustomDelegate
     _headers.each do |header, value|
       head[header] = value
     end
+
+    $logger.debug("Fetching from #{uri}, headers assembled: #{head.to_hash}")
 
     # XXX: Ideally, we could use some form of connection pooling or
     # something here.
