@@ -92,6 +92,11 @@ class CustomDelegate
     _context_auth_headers.map { |k, v| ['Authorization', _auth_headers[k] % {value: v}]}.to_hash
   end
 
+  # Acquire cache ID value.
+  def _header_value
+    _context_auth_headers.map { |k, v| "#{k}::#{v}"}.first
+  end
+
   # Fetch the URL using the HEAD method.
   #
   # Adapted from https://stackoverflow.com/a/6934503
