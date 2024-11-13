@@ -77,24 +77,24 @@ class CustomDelegate
     {
       'X-DGI-I8-Helper-Authorization-Token': "Bearer %{value}",
       'Authorization': "%{value}",
-    }.map { |k, v| [k.downcase, v] }.to_h
+    }.transform_keys { |k| k.downcase }
   end
 
   # Get the auth headers present in the request headers.
   def _context_auth_headers
-    headers = context['request_headers'].select { |k, v| _auth_headers.include?(k.downcase) }.to_hash
+    headers = context['request_headers'].select { |k, v| _auth_headers.include?(k.downcase) }
     raise "Too many auth headers. Only one of #{_auth_headers.keys} expected." if headers.size > 1
     return headers
   end
 
   # Retrieve a hash of headers to pass, mapped.
   def _headers
-    _context_auth_headers.map { |k, v| ['Authorization', _auth_headers[k] % {value: v}]}.to_h
+    _context_auth_headers.to_a.map { |k, v| ['Authorization', _auth_headers[k] % {value: v}]}.to_h
   end
 
   # Acquire cache ID value.
   def _header_value
-    _context_auth_headers.map { |k, v| "#{k}::#{v}"}.first
+    _context_auth_headers.to_a.map { |k, v| "#{k}::#{v}"}.first
   end
 
   # Fetch the URL using the HEAD method.
