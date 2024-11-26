@@ -72,32 +72,48 @@ class CustomDelegate
     end
   end
 
-  # The name of our header.
-  def _header
-    # XXX: Downcase'd as, Cantaloupe normalizes them to be such.
-    'X-DGI-I8-Helper-Authorization-Token'.downcase
+  # Get hash of down-case'd headers to templates for an Authorization header.
+  def _auth_headers
+    {
+      # Bare token, needs to be formatted.
+      "X-DGI-I8-Helper-Authorization-Token" => "Bearer %{value}",
+      # Formatted token, just need to pass it along.
+      "Authorization" => "%{value}"
+    }.transform_keys! { |k| k.downcase }
   end
 
-  # Fetch the value of our passed header.
-  #
-  # Returns the empty string if the header was _not_ passed.
-  def _header_value
-    if context['request_headers'].has_key?(_header)
-      context['request_headers'][_header]
-    else
-      ''
+  # Get the auth headers present in the request headers.
+  def _context_auth_headers
+    request_headers = context['request_headers'].to_h.transform_keys! { |k| k.downcase }
+    headers = _auth_headers.to_a.map do |item|
+      k, v = item
+      if request_headers.include?(k)
+        [k, request_headers[k]]
+      else
+        [k, nil]
+      end
+    end.to_h.compact
+
+    if headers.size > 1
+      raise "Too many auth headers. Only one of #{_auth_headers.keys} expected."
     end
+    return headers
   end
 
-  # Retrieve a hash of headers to pass.
+  # Retrieve a hash of headers to pass, mapped.
   def _headers
-    to_return = Hash.new
+    _context_auth_headers.to_a.map do |item|
+      k, v = item
+      ['Authorization', _auth_headers[k] % {value: v}]
+    end.to_h
+  end
 
-    if context['request_headers'].has_key?(_header)
-      to_return['Authorization'] = "Bearer #{_header_value}"
-    end
-
-    return to_return
+  # Acquire cache ID value.
+  def _header_value
+    _context_auth_headers.to_a.map do |item|
+      k, v = item
+      "#{k}::#{v}"
+    end.first
   end
 
   # Fetch the URL using the HEAD method.
