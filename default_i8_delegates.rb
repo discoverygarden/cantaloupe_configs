@@ -135,13 +135,15 @@ class CustomDelegate
   # Fetch the URL using the HEAD method.
   #
   # Adapted from https://stackoverflow.com/a/6934503
-  def _fetch(uri, limit = 10)
+  def _fetch(uri, limit = 10, last_response = nil)
     # StandardError should suffice.
     raise 'HTTP redirect too deep' if limit == 0
 
     head = Net::HTTP::Head.new uri
-    _headers.each do |header, value|
-      head[header] = value
+    if last_response == nil or last_response['x-dgi_i8_helper_flysystem_s3__no_headers'] != 'true'
+      _headers.each do |header, value|
+        head[header] = value
+      end
     end
 
     # XXX: Ideally, we could use some form of connection pooling or
@@ -152,7 +154,7 @@ class CustomDelegate
 
       case resp
       when Net::HTTPSuccess     then resp
-      when Net::HTTPRedirection then _fetch(URI(resp['location']), limit - 1)
+      when Net::HTTPRedirection then _fetch(URI(resp['location']), limit - 1, resp)
       else
         resp.error!
       end
