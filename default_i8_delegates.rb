@@ -102,10 +102,15 @@ class CustomDelegate
 
   # Retrieve a hash of headers to pass, mapped.
   def _headers
-    _context_auth_headers.to_a.map do |item|
+    headers = _context_auth_headers.to_a.map do |item|
       k, v = item
       ['Authorization', _auth_headers[k] % {value: v}]
     end.to_h
+
+    headers['X-Forwarded-For'] = context['client_ip']
+    headers['Forwarded'] = "for=\"#{context['client_ip']}\""
+
+    return headers
   end
 
   # Acquire cache ID value.
