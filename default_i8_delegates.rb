@@ -189,7 +189,6 @@ class CustomDelegate
             end
           end
 
-
           return resp.is_a?(Net::HTTPSuccess)
         }
       rescue UncacheableResponseError => e
