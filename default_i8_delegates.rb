@@ -22,6 +22,17 @@ if $sites_cache.nil?
   }
 end
 
+class UncacheableResponseError < StandardError
+  attr_reader :resp
+  attr_reader :statement
+
+  def initialize(resp, statement)
+    @resp = resp
+    @statement = statement
+    super("Uncacheable response.")
+  end
+end
+
 class CustomDelegate
   old_functions = {
     :httpsource_resource_info => instance_method(:httpsource_resource_info),
@@ -170,8 +181,21 @@ class CustomDelegate
       begin
         return site_token_cache.get(_resource) {
           # XXX: Implicit return to populate cache value.
-          _fetch(URI(_resource)).is_a?(Net::HTTPSuccess)
+          resp = _fetch(URI(_resource))
+
+          ['private', 'no-cache', 'no-store'].each do |cache_control_statement|
+            if resp['cache-control'].include? cache_control_statement
+              raise UncacheableResponseError.new(resp, cache_control_statement)
+            end
+          end
+
+
+          return resp.is_a?(Net::HTTPSuccess)
         }
+      rescue UncacheableResponseError => e
+        is_success = e.resp.is_a?(Net::HTTPSuccess)
+        $logger.debug("Pre-auth response (of #{is_success}) is not cacheable for #{_resource}")
+        return is_success
       rescue => e
         $logger.error("Exception: #{e}, Backtrace: #{e.backtrace}")
         return false
