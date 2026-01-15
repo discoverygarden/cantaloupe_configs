@@ -183,9 +183,11 @@ class CustomDelegate
           # XXX: Implicit return to populate cache value.
           resp = _fetch(URI(_resource))
 
-          ['private', 'no-cache', 'no-store'].each do |cache_control_statement|
-            if resp['cache-control'].include? cache_control_statement
-              raise UncacheableResponseError.new(resp, cache_control_statement)
+          if ! _header_value.is_a?(String) or _header_value.empty?
+            ['private', 'no-cache', 'no-store'].each do |cache_control_statement|
+              if resp['cache-control'].include? cache_control_statement
+                raise UncacheableResponseError.new(resp, cache_control_statement)
+              end
             end
           end
 
