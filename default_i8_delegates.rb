@@ -180,9 +180,15 @@ class CustomDelegate
       }
       begin
         return site_token_cache.get(_resource) {
-          # XXX: Implicit return to populate cache value.
           resp = _fetch(URI(_resource))
 
+          # XXX: We are generally expecting to hit a file download route in
+          # Drupal which includes a `Cache-Control: private` by default,
+          # such that without a JWT/auth header presented here, we expect to not
+          # to cache things. Leaving with the header check in the event that the
+          # route Drupal-side is made cacheable,
+          #
+          # @see https://git.drupalcode.org/project/drupal/-/blob/10.5.x/core/modules/file/file.module?ref_type=heads#L369
           if ! _header_value.is_a?(String) or _header_value.empty?
             ['private', 'no-cache', 'no-store'].each do |cache_control_statement|
               if resp['cache-control'].include? cache_control_statement
