@@ -190,8 +190,13 @@ class CustomDelegate
           #
           # @see https://git.drupalcode.org/project/drupal/-/blob/10.5.x/core/modules/file/file.module?ref_type=heads#L369
           if ! _header_value.is_a?(String) or _header_value.empty?
+            cache_control_header = resp['cache-control']
+            if ! cache_control_header.is_a?(String)
+              $logger.debug('No cache-control header; treating as uncacheable.')
+              raise UncacheableResponseError.new(resp, nil)
+            end
             ['private', 'no-cache', 'no-store'].each do |cache_control_statement|
-              if resp['cache-control'].include? cache_control_statement
+              if cache_control_header.include? cache_control_statement
                 raise UncacheableResponseError.new(resp, cache_control_statement)
               end
             end
