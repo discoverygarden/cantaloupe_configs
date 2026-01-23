@@ -22,6 +22,17 @@ if $sites_cache.nil?
   }
 end
 
+class UncacheableResponseError < StandardError
+  attr_reader :resp
+  attr_reader :statement
+
+  def initialize(resp, statement)
+    @resp = resp
+    @statement = statement
+    super("Uncacheable response.")
+  end
+end
+
 class CustomDelegate
   old_functions = {
     :httpsource_resource_info => instance_method(:httpsource_resource_info),
@@ -102,10 +113,15 @@ class CustomDelegate
 
   # Retrieve a hash of headers to pass, mapped.
   def _headers
-    _context_auth_headers.to_a.map do |item|
+    headers = _context_auth_headers.to_a.map do |item|
       k, v = item
       ['Authorization', _auth_headers[k] % {value: v}]
     end.to_h
+
+    headers['X-Forwarded-For'] = context['client_ip']
+    headers['Forwarded'] = "for=\"#{context['client_ip']}\""
+
+    return headers
   end
 
   # Acquire cache ID value.
@@ -164,9 +180,34 @@ class CustomDelegate
       }
       begin
         return site_token_cache.get(_resource) {
-          # XXX: Implicit return to populate cache value.
-          _fetch(URI(_resource)).is_a?(Net::HTTPSuccess)
+          resp = _fetch(URI(_resource))
+
+          # XXX: We are generally expecting to hit a file download route in
+          # Drupal which includes a `Cache-Control: private` by default,
+          # such that without a JWT/auth header presented here, we expect to not
+          # to cache things. Leaving with the header check in the event that the
+          # route Drupal-side is made cacheable,
+          #
+          # @see https://git.drupalcode.org/project/drupal/-/blob/10.5.x/core/modules/file/file.module?ref_type=heads#L369
+          if ! _header_value.is_a?(String) or _header_value.empty?
+            cache_control_header = resp['cache-control']
+            if ! cache_control_header.is_a?(String)
+              $logger.debug('No cache-control header; treating as uncacheable.')
+              raise UncacheableResponseError.new(resp, nil)
+            end
+            ['private', 'no-cache', 'no-store'].each do |cache_control_statement|
+              if cache_control_header.include? cache_control_statement
+                raise UncacheableResponseError.new(resp, cache_control_statement)
+              end
+            end
+          end
+
+          return resp.is_a?(Net::HTTPSuccess)
         }
+      rescue UncacheableResponseError => e
+        is_success = e.resp.is_a?(Net::HTTPSuccess)
+        $logger.debug("Pre-auth response (of #{is_success}) is not cacheable for #{_resource}")
+        return is_success
       rescue => e
         $logger.error("Exception: #{e}, Backtrace: #{e.backtrace}")
         return false
