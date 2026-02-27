@@ -60,7 +60,8 @@ class CustomDelegate
   # Build up the full URL to the resource.
   def _resource
     if _site_id and _suffix
-      $info['sitemap'].fetch(_site_id) % {
+      $info['sitemap'].fetch(_site_id, $info['modern_fallback']) % {
+        site_id: _site_id,
         suffix: Base64.decode64(_suffix),
       }
     end
