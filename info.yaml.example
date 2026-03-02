@@ -29,3 +29,8 @@ modern_fallback: ~
 sitemap:
     alpha: 'http://localhost/alpha/islandora/object/%{pid}/datastream/%{dsid}/view?token=%{token}'
     bravo: 'http://localhost/bravo/islandora/object/%{pid}/datastream/%{dsid}/view?token=%{token}'
+
+# 'sites_cache_size': Integer indicating the number of cache buckets for which to
+#   allow. Actual size is the sum of this value and count of entries in
+#   `sitemap`.
+sites_cache_size: 10

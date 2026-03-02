@@ -17,7 +17,7 @@ if $sites_cache.nil?
   $semaphore.synchronize {
     # Avoid repopulating if populated in another thread...
     if $sites_cache.nil?
-      $sites_cache = CacheLib.safe_create :lru, $info['sitemap'].length
+      $sites_cache = CacheLib.safe_create :lru, ($info['sitemap'].length + $info['sites_cache_size'])
     end
   }
 end
@@ -165,7 +165,7 @@ class CustomDelegate
     # If...
     if _resource
       # ... we have something that appears to be an I8 resource, enforce auth...
-      $sites_cache.limit = $info['sitemap'].length
+      $sites_cache.limit = ($info['sitemap'].length + $info['sites_cache_size'])
       site_cache = $sites_cache.get(_site_id) {
         $logger.debug("Creating token bucket for #{_site_id}")
         # XXX: Implicit return to populate cache value.
