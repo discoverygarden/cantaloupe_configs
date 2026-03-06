@@ -34,3 +34,6 @@ sitemap:
 #   allow. Actual size is the sum of this value and count of entries in
 #   `sitemap`.
 sites_cache_size: 10
+
+# 'site_id_regex': Regex used to validate site IDs for modern installations.
+#site_id_regex: '^[a-zA-Z][a-zA-Z0-9_-]*$'
