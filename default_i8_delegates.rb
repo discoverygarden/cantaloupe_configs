@@ -17,7 +17,7 @@ if $sites_cache.nil?
   $semaphore.synchronize {
     # Avoid repopulating if populated in another thread...
     if $sites_cache.nil?
-      $sites_cache = CacheLib.safe_create :lru, $info['sitemap'].length
+      $sites_cache = CacheLib.safe_create :lru, ($info['sitemap'].length + $info['sites_cache_size'])
     end
   }
 end
@@ -57,10 +57,17 @@ class CustomDelegate
     end
   end
 
+  # check if site_id is valid when validation regex is set
+  def _site_id_valid?
+    re = /#{$info.fetch('site_id_regex','^[a-zA-Z][a-zA-Z0-9_-]*$')}/
+    return re.match?(_site_id)
+  end
+
   # Build up the full URL to the resource.
   def _resource
     if _site_id and _suffix
-      $info['sitemap'].fetch(_site_id) % {
+      $info['sitemap'].fetch(_site_id, $info['modern_fallback']) % {
+        site_id: _site_id,
         suffix: Base64.decode64(_suffix),
       }
     end
@@ -69,6 +76,9 @@ class CustomDelegate
   # Override; allow the passing of additional headers for auth.
   def httpsource_resource_info(options = {})
     if _site_id
+      unless _site_id_valid?
+        return nil
+      end
       url = _resource
 
       $logger.debug("Site ID '#{_site_id}' resolved to '#{url}'.")
@@ -162,9 +172,13 @@ class CustomDelegate
   # Override; handle I8 resource auth.
   def pre_authorize(options = {})
     # If...
+    if _site_id and not _site_id_valid?
+      $logger.debug("Site ID '#{_site_id}' is invalid.")
+      return false
+    end
     if _resource
       # ... we have something that appears to be an I8 resource, enforce auth...
-      $sites_cache.limit = $info['sitemap'].length
+      $sites_cache.limit = ($info['sitemap'].length + $info['sites_cache_size'])
       site_cache = $sites_cache.get(_site_id) {
         $logger.debug("Creating token bucket for #{_site_id}")
         # XXX: Implicit return to populate cache value.

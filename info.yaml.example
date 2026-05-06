@@ -12,6 +12,14 @@
 # 'fallback': The default URL template to use if nothing is matched in
 #   the 'sitemap' hash below. The (hard-coded) default is the same as below:
 fallback: 'http://localhost/islandora/object/%{pid}/datastream/%{dsid}/view?token=%{token}'
+
+# 'modern_fallback': The default URL template to use if nothing is match in the
+# 'sitemap' hash. Nil by default. Fill out with a string.
+# Available to be templated:
+# - suffix
+# - site_id
+modern_fallback: ~
+
 # 'sitemap': Hash of opaque site identifiers to related URL templates. This site
 #   identifier should be provided as a fourth value the tilde-separated IIIF
 #   identifier; for example, "the:pid~JP2~access_token~opaque_identifier".
@@ -21,3 +29,11 @@ fallback: 'http://localhost/islandora/object/%{pid}/datastream/%{dsid}/view?toke
 sitemap:
     alpha: 'http://localhost/alpha/islandora/object/%{pid}/datastream/%{dsid}/view?token=%{token}'
     bravo: 'http://localhost/bravo/islandora/object/%{pid}/datastream/%{dsid}/view?token=%{token}'
+
+# 'sites_cache_size': Integer indicating the number of cache buckets for which to
+#   allow. Actual size is the sum of this value and count of entries in
+#   `sitemap`.
+sites_cache_size: 10
+
+# 'site_id_regex': Regex used to validate site IDs for modern installations.
+#site_id_regex: '^[a-zA-Z][a-zA-Z0-9_-]*$'
